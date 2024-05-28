@@ -46,10 +46,9 @@ class Can_Wrapper:
         if (value < 0):
             value = 255 - abs(value)
         return value
-
     def move_forward(self, value):
         self.input_list[1] = self.clamp(self.input_list[1] + value)
-
+        
     def move_backward(self, value):
         self.input_list[1] = self.clamp(self.input_list[1] + -value)
 
@@ -90,11 +89,12 @@ class Can_Wrapper:
         motor_value = 0
         command = ""
         for motor_value_from_list in thrust_list:
-            motor_value = self.twos_complement(int(motor_value_from_list))
+            motor_value = self.twos_complement(int(self.clamp(motor_value_from_list)))
             command += '{:02X}'.format(motor_value) + " "
 
         message = can.Message(arbitration_id = 16, is_extended_id = False, data = bytearray.fromhex(command))
-        self.bus.send(message, timeout = 0.2)
+        self.bus.send(message)
+        self.stop()
 
 #main for testing
 def main():
@@ -173,8 +173,6 @@ def main():
     wrapper.send_command()
     time.sleep(1)
 
-
-
     #-----------------------------turn left
     wrapper.turn_left(.1)
     wrapper.send_command()
@@ -191,10 +189,6 @@ def main():
     wrapper.stop()
     wrapper.send_command()
     time.sleep(1)
-
-
-
-
 
     #-----------------------------stop
     wrapper.stop()

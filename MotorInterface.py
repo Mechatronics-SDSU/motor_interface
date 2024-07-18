@@ -1,17 +1,32 @@
-from Motor.MotorWrapper import Can_Wrapper
-from multiprocessing import Process, Value
+from Motor.MotorWrapper import  Can_Wrapper
+from multiprocessing import     Process,    Value
 import math
 import time
+
+
 
 #from MotorWrapper import Can_Wrapper
 
 class MotorInterface:
 
-    def __init__(self, linear_acceleration_x , linear_acceleration_y, linear_acceleration_z, 
-                angular_velocity_x, angular_velocity_y, angular_velocity_z, 
-                orientation_x, orientation_y, orientation_z, 
+    '''
+        discord: @kialli
+        github: @kchan5071
+        
+        creates shared memory and processes to communicate between vision and control
+        
+        vision: writes to shared memory
+        currently just printing process data, later to use with PID control
+        
+        could use arrays, but prefer to use shared memory for simplicity and readability
+        
+    '''
+
+    def __init__(self, linear_acceleration_x ,  linear_acceleration_y,  linear_acceleration_z, 
+                angular_velocity_x,             angular_velocity_y,     angular_velocity_z, 
+                orientation_x,                  orientation_y,          orientation_z, 
                 depth,
-                offset_x, offset_y):
+                offset_x,                       offset_y):
         self.linear_acceleration_x = linear_acceleration_x
         self.linear_acceleration_y = linear_acceleration_y
         self.linear_acceleration_z = linear_acceleration_z

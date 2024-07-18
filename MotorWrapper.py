@@ -3,14 +3,20 @@ import math
 import numpy as np
 import time
 
-# This class is a wrapper for the CAN bus interface. It is used to send commands to the motors.
-# The class has methods to move the robot in different directions and to stop the robot.
-# The class also has a method to send the commands to the motors.
-# The class has a method to clamp the motor values to a reasonable range.
-# The class has a method to convert a value to two's complement.
-
-
 class Can_Wrapper:
+
+    '''
+        discord: @kialli
+        github: @kchan5071
+        
+        This class is a wrapper for the CAN bus interface. It is used to send commands to the motors.
+        has methods:
+            different directions and to stop the robot.
+            send the commands to the motors.
+            clamp the motor values to a reasonable range.
+            convert a value to two's complement.
+        
+    '''
 
     def __init__(self):
         self.bus = can.Bus(interface='socketcan',channel = 'can0', receive_own_messages=True)
@@ -96,8 +102,8 @@ class Can_Wrapper:
         self.bus.send(message)
         self.stop()
 
-#main for testing
-def main():
+
+if __name__ == "__main__":
     wrapper = Can_Wrapper()
     #-----------------------------forward
     wrapper.move_forward(.1)
@@ -193,9 +199,3 @@ def main():
     #-----------------------------stop
     wrapper.stop()
     wrapper.send_command()
-
-
-
-
-if __name__ == "__main__":
-    main()

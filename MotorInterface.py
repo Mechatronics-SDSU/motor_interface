@@ -44,7 +44,7 @@ class MotorInterface:
         self.x_hard_deadzone = 400
         self.y_hard_deadzone = 400
 
-        self.x_soft_deadzone = 100
+        self.x_soft_deadzone = 50
         self.y_soft_deadzone = 200
 
         self.x_turn_speed = 5
@@ -57,8 +57,45 @@ class MotorInterface:
 
         self.iteration_since_last_detection = 0
 
+        def follow_color(self):            
+            #NO OBJECT -------------------------------------------------
+            if self.color_offset_x.value == 0:
+                self.iteration_since_last_detection += 1
+                self.can.stop()
+            #HARD DEADZONE----------------------------------------------
+            #turn right hard deadzone
+            #turn right if to the left of the hard deadzone
+            elif(self.color_offset_x.value < -self.x_hard_deadzone):
+                self.can.turn_right(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+                self.iteration_since_last_detection = 0
+            #turn left hard deadzone
+            #turn left if to the right of the hard deadzone
+            elif (self.color_offset_x.value > self.x_hard_deadzone):
+                self.can.turn_left(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+                self.iteration_since_last_detection = 0
+            #SOFT DEADZONE----------------------------------------------
+            #turn right soft deadzone
+            #turn right and move forward if to the left of the soft deadzone
+            elif (self.color_offset_x.value < -self.x_soft_deadzone):
+                self.can.turn_right(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+                self.can.move_forward(self.speed)
+                self.iteration_since_last_detection = 0
+            #turn left soft deadzone
+            #turn left and move forward if to the right of the soft deadzone
+            elif (self.color_offset_x.value > self.x_soft_deadzone):
+                self.can.turn_left(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+                self.can.move_forward(self.speed)
+                self.iteration_since_last_detection = 0
+            #CENTERED---------------------------------------------------
+            #move forward if inside soft deadzone    
+            else: 
+                #print("centered")
+                self.can.move_forward(self.speed)
+                self.iteration_since_last_detection = 0
 
-    def follow(self):            
+
+
+    def follow_yolo(self):            
             #NO OBJECT -------------------------------------------------
             if self.yolo_offset_x.value == 0:
                 self.iteration_since_last_detection += 1
@@ -93,7 +130,6 @@ class MotorInterface:
                 #print("centered")
                 self.can.move_forward(self.speed)
                 self.iteration_since_last_detection = 0
-            #else: print(f"x: {self.yolo_offset_x.value} x_deadzone: {self.x_soft_deadzone}")
             #STOP DEPTH-----------------------------------------------
             #stop if depth is less than stop value
             if (self.distance.value < self.distance_stop_value and self.distance.value != 0.0):

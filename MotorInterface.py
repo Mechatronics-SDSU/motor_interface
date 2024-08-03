@@ -14,7 +14,9 @@ class MotorInterface:
                 distance,
                 yolo_offset_x,                  yolo_offset_y,
                 dvl_z,
-                color_offset_x,                 color_offset_y):
+                color_offset_x,                 color_offset_y,
+                running,
+                enable_yolo,                    enable_color):
         self.linear_acceleration_x = linear_acceleration_x
         self.linear_acceleration_y = linear_acceleration_y
         self.linear_acceleration_z = linear_acceleration_z
@@ -30,9 +32,11 @@ class MotorInterface:
         self.dvl_z = dvl_z
         self.color_offset_x = color_offset_x
         self.color_offset_y = color_offset_y
-
+        self.running = running
         self.min_depth = .9
         self.max_depth = 1.1
+        self.enable_color = enable_color
+        self.enable_yolo = enable_yolo
         
 
         self.previous_x_yolo_offsets = []
@@ -57,41 +61,41 @@ class MotorInterface:
 
         self.iteration_since_last_detection = 0
 
-        def follow_color(self):            
-            #NO OBJECT -------------------------------------------------
-            if self.color_offset_x.value == 0:
-                self.iteration_since_last_detection += 1
-                self.can.stop()
-            #HARD DEADZONE----------------------------------------------
-            #turn right hard deadzone
-            #turn right if to the left of the hard deadzone
-            elif(self.color_offset_x.value < -self.x_hard_deadzone):
-                self.can.turn_right(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
-                self.iteration_since_last_detection = 0
-            #turn left hard deadzone
-            #turn left if to the right of the hard deadzone
-            elif (self.color_offset_x.value > self.x_hard_deadzone):
-                self.can.turn_left(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
-                self.iteration_since_last_detection = 0
-            #SOFT DEADZONE----------------------------------------------
-            #turn right soft deadzone
-            #turn right and move forward if to the left of the soft deadzone
-            elif (self.color_offset_x.value < -self.x_soft_deadzone):
-                self.can.turn_right(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
-                self.can.move_forward(self.speed)
-                self.iteration_since_last_detection = 0
-            #turn left soft deadzone
-            #turn left and move forward if to the right of the soft deadzone
-            elif (self.color_offset_x.value > self.x_soft_deadzone):
-                self.can.turn_left(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
-                self.can.move_forward(self.speed)
-                self.iteration_since_last_detection = 0
-            #CENTERED---------------------------------------------------
-            #move forward if inside soft deadzone    
-            else: 
-                #print("centered")
-                self.can.move_forward(self.speed)
-                self.iteration_since_last_detection = 0
+    def follow_color(self):            
+        #NO OBJECT -------------------------------------------------
+        if self.color_offset_x.value == 0:
+            self.iteration_since_last_detection += 1
+            self.can.stop()
+        #HARD DEADZONE----------------------------------------------
+        #turn right hard deadzone
+        #turn right if to the left of the hard deadzone
+        elif(self.color_offset_x.value < -self.x_hard_deadzone):
+            self.can.turn_right(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+            self.iteration_since_last_detection = 0
+        #turn left hard deadzone
+        #turn left if to the right of the hard deadzone
+        elif (self.color_offset_x.value > self.x_hard_deadzone):
+            self.can.turn_left(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+            self.iteration_since_last_detection = 0
+        #SOFT DEADZONE----------------------------------------------
+        #turn right soft deadzone
+        #turn right and move forward if to the left of the soft deadzone
+        elif (self.color_offset_x.value < -self.x_soft_deadzone):
+            self.can.turn_right(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+            self.can.move_forward(self.speed)
+            self.iteration_since_last_detection = 0
+        #turn left soft deadzone
+        #turn left and move forward if to the right of the soft deadzone
+        elif (self.color_offset_x.value > self.x_soft_deadzone):
+            self.can.turn_left(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+            self.can.move_forward(self.speed)
+            self.iteration_since_last_detection = 0
+        #CENTERED---------------------------------------------------
+        #move forward if inside soft deadzone    
+        else: 
+            #print("centered")
+            self.can.move_forward(self.speed)
+            self.iteration_since_last_detection = 0
 
 
 
@@ -164,15 +168,13 @@ class MotorInterface:
             self.iteration_since_last_detection += 1
 
     def sit_at_depth(self):
-        print(self.dvl_z.value)
+        # print(self.dvl_z.value)
         if (self.dvl_z.value <= 0.0):
             return
         if self.dvl_z.value < self.min_depth:
             self.can.move_down(.2)
-            print("down")
         elif self.dvl_z.value > self.max_depth:
             self.can.move_up(.4)
-            print("up")
         pass
 
     def run_loop(self):
@@ -181,10 +183,16 @@ class MotorInterface:
         # self.can.stop()
         # self.can.send_command()
 
-        while True:
+        while self.running.value:
             start = time.time()
 
             self.sit_at_depth()
+
+            if self.enable_color.value:
+                self.follow_color()
+
+            elif self.enable_yolo.value:
+                self.follow_yolo()
             # if (self.iteration_since_last_detection < 20):
             #     print(self.iteration_since_last_detection)
             #     s            # if (self.iteration_since_last_detection < 20):

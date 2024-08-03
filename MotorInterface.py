@@ -138,7 +138,10 @@ class MotorInterface:
             #stop if depth is less than stop value
             if (self.distance.value < self.distance_stop_value and self.distance.value != 0.0):
                 print("stop")
-                self.can.stop()
+                self.move_forward(3)
+                self.enable_color.value = True
+                self.enable_yolo.value = False
+
 
     def move_down(self, down_time):
         self.can.move_down(20)
@@ -205,7 +208,8 @@ class MotorInterface:
             #     self.look_for_detection()
             #     print(self.iteration_since_last_detection)
             end = time.time()
-            time.sleep(.05 - (end - start))
+            if .5 - (end - start) > 0:
+                time.sleep(.05 - (end - start))
             self.can.send_command()
 
 

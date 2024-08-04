@@ -24,20 +24,20 @@ class Can_Wrapper:
         self.MAX_MOTOR_VAL = 100
     
         #set ~10 for in air, ~30 in water---------------------------------------------------------------
-        self.REASONABLE_MOTOR_MAX = 10
+        self.REASONABLE_MOTOR_MAX = 30
         #-------------------------------------------------------------------------------------------------
 
         self.motors = [
             #LjoyX   LjoyY   RjoyX   RjoyY    Rtrig   Ltrig   LPad       RDpad
             
            #strafe for/bck   yaw     ptch#     up#    down#   Lroll#     Rroll#
-            [ 0,      0,       0,     -1,       1,      1,      1,        -1], # motor 0 (top front left)
+            [ 0,      0,       0,     -1,      -1,      1,      1,        -1], # motor 0 (top front left)
             [ 1,     -1,      -1,      0,       0,      0,      0,         0], # motor 1 (bottom front left)
             [ 0,      0,       0,      1,      -1,      1,      1,        -1], # motor 2 (top back left)
             [-1,     -1,      -1,      0,       0,      0,      0,         0], # motor 3 (bottom back left)
             [ 0,      0,       0,      1,      -1,      1,     -1,         1], # motor 4 (top back right)
             [-1,     -1,       1,      0,       0,      0,      0,         0], # motor 5 (bottom back right)
-            [ 0,      0,       0,     -1,       1,      1,     -1,         1], # motor 6 (top front right)
+            [ 0,      0,       0,     -1,      -1,      1,     -1,         1], # motor 6 (top front right)
             [ 1,     -1,       1,      0,       0,      0,      0,         0]  # motor 7 (bottom front right)
         ]
         self.input_list = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -89,6 +89,14 @@ class Can_Wrapper:
     def turn_right(self, value):
         print("Turn Right")
         self.input_list[2] = self.clamp(self.input_list[2] + -value)
+
+    def roll_left(self, value):
+        print("Roll Left")
+        self.input_list[7] = self.clamp(self.input_list[2] + value)
+
+    def roll_right(self, value):
+        print("Roll Right")
+        self.input_list[7] = self.clamp(self.input_list[2] + -value)
 
 
     def stop(self):

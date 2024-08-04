@@ -24,7 +24,7 @@ class Can_Wrapper:
         self.MAX_MOTOR_VAL = 100
     
         #set ~10 for in air, ~30 in water---------------------------------------------------------------
-        self.REASONABLE_MOTOR_MAX = 30
+        self.REASONABLE_MOTOR_MAX = 10
         #-------------------------------------------------------------------------------------------------
 
         self.motors = [

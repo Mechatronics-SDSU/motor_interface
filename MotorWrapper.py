@@ -24,7 +24,7 @@ class Can_Wrapper:
         self.MAX_MOTOR_VAL = 100
     
         #set ~10 for in air, ~30 in water---------------------------------------------------------------
-        self.REASONABLE_MOTOR_MAX = 10
+        self.REASONABLE_MOTOR_MAX = 30
         #-------------------------------------------------------------------------------------------------
 
         self.motors = [
@@ -62,7 +62,6 @@ class Can_Wrapper:
         self.input_list[1] = self.clamp(self.input_list[1] + value)
 
     def move_left(self, value):
-        
         self.input_list[0] = self.clamp(self.input_list[0] + value)
 
     def move_right(self, value):
@@ -80,14 +79,14 @@ class Can_Wrapper:
 
     def turn_down(self, value):
         print("Turn Down")
-        self.input_list[4] = self.clamp(self.input_list[4] + value)
+        self.input_list[3] = self.clamp(self.input_list[3] - value)
 
     def turn_left(self, value):
-        print("Turn Left")
+        print("Turn Left", value)
         self.input_list[2] = self.clamp(self.input_list[2] + value)
 
     def turn_right(self, value):
-        print("Turn Right")
+        print("Turn Right", value)
         self.input_list[2] = self.clamp(self.input_list[2] + -value)
 
     def roll_left(self, value):

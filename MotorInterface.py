@@ -16,7 +16,7 @@ class MotorInterface:
                 dvl_z,
                 color_offset_x,                 color_offset_y,
                 running,
-                enable_yolo,                    enable_color):
+                enable_yolo,                    enable_color, x_hard_deadzone):
         self.linear_acceleration_x = linear_acceleration_x
         self.linear_acceleration_y = linear_acceleration_y
         self.linear_acceleration_z = linear_acceleration_z
@@ -34,21 +34,21 @@ class MotorInterface:
         self.color_offset_y = color_offset_y
         self.running = running
         self.min_depth = .8
-        self.max_depth = 1.0
+        self.max_depth = 1
         self.enable_color = enable_color
         self.enable_yolo = enable_yolo
         
 
         self.previous_x_yolo_offsets = []
 
-        self.max_iterations = 10000000
+        # self.max_iterations = 10000000
         self.can = Can_Wrapper()
 
         #TUNE----------------------resize zed camera input-----------------------------------
-        self.x_hard_deadzone = 400
+        self.x_hard_deadzone = x_hard_deadzone
         self.y_hard_deadzone = 400
 
-        self.x_soft_deadzone = 50
+        self.x_soft_deadzone = 200
         self.y_soft_deadzone = 200
 
         self.x_turn_speed = 5
@@ -57,37 +57,40 @@ class MotorInterface:
 
         self.distance_stop_value = 1000
         self.speed = 20
-        self.turn_down_speed = 10
+        self.turn_down_speed = 5
 
         self.is_looking_for_detection = True
         self.corrected_drift = False
 
+        self.iterations = 0
+        self.max_iterations = 100 + 200
         #timeout / detection parameters------------------------------
 
         self.iteration_since_last_detection = 0
         self.iterations_before_detection_timeout = 100
 
-        self.detection_thrust_length = 3
+        self.detection_thrust_length = 10
         self.detection_thrust_count = 0
 
         self.wait_length = 10
         self.current_wait = 0
 
-    def follow_color(self):            
+    def follow_buoy(self):   
+        print(self.color_offset_x.value )         
         #NO OBJECT -------------------------------------------------
-        if self.color_offset_x.value == 0:
+        if self.color_offset_x.value == 0 and self.orientation_x.value < .1:
             self.iteration_since_last_detection += 1
             return
         #HARD DEADZONE----------------------------------------------
         #turn right hard deadzone
         #turn right if to the left of the hard deadzone
         elif(self.color_offset_x.value < -self.x_hard_deadzone):
-            self.can.turn_right(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+            self.can.turn_right(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed / 3))
             self.iteration_since_last_detection = 0
         #turn left hard deadzone
         #turn left if to the right of the hard deadzone
         elif (self.color_offset_x.value > self.x_hard_deadzone):
-            self.can.turn_left(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+            self.can.turn_left(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed / 3))
             self.iteration_since_last_detection = 0
         #SOFT DEADZONE----------------------------------------------
         #turn right soft deadzone
@@ -108,6 +111,46 @@ class MotorInterface:
             #print("centered")
             self.can.move_forward(self.speed)
             self.iteration_since_last_detection = 0
+
+    def follow_color(self):   
+        print("Offset x", self.color_offset_x.value )         
+        #NO OBJECT -------------------------------------------------
+        if self.color_offset_x.value == 0 and self.orientation_x.value < .1:
+            self.iteration_since_last_detection += 1
+            return
+        #HARD DEADZONE----------------------------------------------
+        # #turn right hard deadzone
+        # #turn right if to the left of the hard deadzone
+        elif(self.color_offset_x.value < -self.x_hard_deadzone):
+            self.can.turn_right(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+            self.iteration_since_last_detection = 0
+        # #turn left hard deadzone
+        # #turn left if to the right of the hard deadzone
+        elif (self.color_offset_x.value > self.x_hard_deadzone):
+            self.can.turn_left(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+            self.iteration_since_last_detection = 0
+        #SOFT DEADZONE----------------------------------------------
+        #turn right soft deadzone
+        #turn right and move forward if to the left of the soft deadzone
+        elif (self.color_offset_x.value < -self.x_soft_deadzone):
+            self.can.turn_right(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+            self.can.move_forward(self.speed)
+            self.iteration_since_last_detection = 0
+            self.iterations += 1
+        #turn left soft deadzone
+        #turn left and move forward if to the right of the soft deadzone
+        elif (self.color_offset_x.value > self.x_soft_deadzone):
+            self.can.turn_left(abs(self.color_offset_x.value / self.normalizer_value * self.x_turn_speed))
+            self.can.move_forward(self.speed)
+            self.iteration_since_last_detection = 0
+            self.iterations += 1
+        #CENTERED---------------------------------------------------
+        #move forward if inside soft deadzone    
+        else: 
+            #print("centered")
+            self.can.move_forward(self.speed)
+            self.iteration_since_last_detection = 0
+            self.iterations += 1
 
 
 
@@ -163,12 +206,11 @@ class MotorInterface:
         time.sleep(forward_time)
 
     def look_for_detection(self):
-
         if self.angular_velocity_y.value > self.y_turn_speed:
             return
         
         if self.detection_thrust_count <= self.detection_thrust_length:
-            self.can.turn_right(.3)
+            self.can.turn_right(1)
             self.detection_thrust_count += 1
             return
         elif self.current_wait < self.wait_length:
@@ -182,14 +224,30 @@ class MotorInterface:
     def sit_at_depth(self):
         # print(self.dvl_z.value)
         if self.dvl_z.value < self.min_depth:
-            self.can.move_down(.3)
+            self.can.move_down(.5)
         elif self.dvl_z.value > self.max_depth:
             self.can.move_up(.4)
         pass
 
+    def face_direction(self, target):
+        #print(target - self.orientation_y.value)
+        if self.orientation_y.value < -.001:
+            self.can.turn_left(min(abs(target - self.orientation_y.value) * 3, 1))
+            print("Correcting to the left")
+        elif self.orientation_y.value > .001:
+            self.can.turn_right(min(abs(target - self.orientation_y.value) * 3, 1))   
+            print("Correcting to the right")  
+
+    def correct_pitch(self):
+        # print(self.orientation_x.value)
+        if self.orientation_x.value < -.001:
+            self.can.turn_up(min(abs(self.orientation_x.value) * 3, 1))
+        elif self.orientation_x.value > .001:
+            self.can.turn_down(min(self.orientation_x.value * 3, 1))
+
     def correct_drift(self):
-        # if self.dvl_z.value < self.min_depth -.1:
-        #     return
+        if self.dvl_z.value > self.min_depth - .1:
+            return
         if self.orientation_y.value < -.1:
             self.can.turn_left(self.orientation_y.value / 2)
             print("turn left")
@@ -215,48 +273,67 @@ class MotorInterface:
         while self.linear_acceleration_x.value == 0.0:
             pass
 
-        while not self.corrected_drift:
-            self.correct_drift()
+        while self.iterations < 100 and self.running.value:
+            start = time.time()
+            self.sit_at_depth()
+            self.face_direction(0)
+            self.correct_pitch()
+            end = time.time()
+            if (.05 - (end - start)) > 0:
+                time.sleep(.05 - (end - start))
+            self.can.send_command()
+            self.iterations += 1
 
         while self.running.value:   
             start = time.time()
-            if not self.corrected_drift:
-                self.correct_drift()
-
             # print("yolo_offset_x: ", self.yolo_offset_x.value)
-            # print("color offset x:", self.color_offset_x.value)
+            # print("color offset x:", self.color_offset    _x.value)
             # print("iteration: ", self.iteration_since_last_detection)
-            if self.iteration_since_last_detection > self.iterations_before_detection_timeout:
+
+
+            if (self.iteration_since_last_detection > self.iterations_before_detection_timeout) and self.enable_yolo:
                 self.look_for_detection()
             else:
                 self.current_wait = 0
                 self.detection_thrust_count = 0
 
             if self.enable_color.value:
+                print("Offset: ", self.color_offset_x)
                 self.follow_color()
+            if self.enable_yolo.value:
+                self.iterations += 1
+                self.look_for_detection()
+                self.follow_buoy()
+                
 
-            elif self.enable_yolo.value:
-                self.follow_yolo()
+            # elif self.enable_yolo.value:
+            #     self.follow_yolo()
 
-            # if (self.iteration_since_last_detection < 20):
-            #     print(self.iteration_since_last_detection)
-            #     s            # if (self.iteration_since_last_detection < 20):
-            #     print(self.iteration_since_last_detection)
-            #     self.follow()
-            # else:
-            #     self.look_for_detection()
-            #     print(self.iteration_since_last_detection)elf.follow()
-            # else:
-            #     self.look_for_detection()
-            #     print(self.iteration_since_last_detection)
+            # self.look_for_detection()
+
+
+            #self.correct_pitch()
             self.sit_at_depth()
+            print("Sitting at depth")
+
+            # self.iterations += 1
+            #print(self.iterations)
+            if self.iterations == self.max_iterations and self.iterations - self.max_iterations < 50:
+                self.can.move_forward(3)
+                self.enable_color.value = False
+                self.color_offset_x.value = 0
+                # self.can.stop()
+                # self.can.send_command()
+                pass
+            if self.iterations == self.max_iterations:
+                self.can.stop()
+                self.enable_yolo.value = True
+                self.enable_color.value = False
 
             end = time.time()
             if (.05 - (end - start)) > 0:
                 time.sleep(.05 - (end - start))
             self.can.send_command()
-        self.can.stop()
-        self.can.send_command()
 
 
 if __name__ == '__main__':

@@ -98,7 +98,15 @@ class Can_Wrapper:
     def move_from_matrix(self, matrix):
         #translate the direction vector matrix to motor values
         temp_list = np.round(np.dot(matrix, self.motors.transpose()))
-        self.input_list = temp_list
+        self.input_list += temp_list
+
+    def twos_complement(self, value):
+        if value >= 0:
+            return value
+        # Calculate the two's complement
+        value = (1 << 8) + value 
+        # Convert to hex
+        return value
 
 
     def stop(self):
@@ -113,7 +121,7 @@ class Can_Wrapper:
             motor_value = np.clip(motor_value, -self.REASONABLE_MOTOR_MAX, self.REASONABLE_MOTOR_MAX)
             self.input_list[i] = (motor_value)
             #format command in HEX, getting rid of the first two characters
-            command += '{:02X}'.format(motor_value) + " "
+            command += '{:02X}'.format(self.twos_complement(motor_value)) + " "
 
         #init CAN command message
         if self.bus is not None:
@@ -121,7 +129,7 @@ class Can_Wrapper:
             self.bus.send(message, timeout = 0.2)
         else:
             pass
-            # print("Motor values: ", self.input_list)
+            print(command)
 
         ret = self.input_list
         self.stop()

@@ -34,7 +34,7 @@ class Can_Wrapper:
         self.MAX_MOTOR_VAL = 100
     
         #set ~10 for in air, ~30 in water---------------------------------------------------------------
-        self.REASONABLE_MOTOR_MAX = 10
+        self.REASONABLE_MOTOR_MAX = 30
         #-------------------------------------------------------------------------------------------------
 
         self.motors = np.array([
@@ -42,13 +42,13 @@ class Can_Wrapper:
             
            # x        y        z        yaw     pitch    roll
             [ 0,      0,       -1,        0,      -1,     -1], # motor 0 (top front left)
-            [-1,      1,        0,       -1,       0,      0], # motor 1 (bottom front left)
+            [ 1,      1,        0,       -1,       0,      0], # motor 1 (bottom front left)
             [ 0,      0,       -1,        0,       1,     -1], # motor 2 (top back left)
-            [-1,     -1,        0,       -1,       0,      0], # motor 3 (bottom back left)
+            [ 1,     -1,        0,       -1,       0,      0], # motor 3 (bottom back left)
             [ 0,      0,       -1,        0,       1,      1], # motor 4 (top back right)
-            [-1,     -1,        0,        1,       0,      0], # motor 5 (bottom back right)
+            [ 1,     -1,        0,        1,       0,      0], # motor 5 (bottom back right)
             [ 0,      0,       -1,        0,      -1,      1], # motor 6 (top front right)
-            [-1,      1,        0,        1,       0,      0]  # motor 7 (bottom front right)
+            [ 1,      1,        0,        1,       0,      0]  # motor 7 (bottom front right)
         ])
         self.input_list = [0, 0, 0, 0, 0, 0, 0, 0]
 
@@ -56,7 +56,7 @@ class Can_Wrapper:
     #returns int
     def twos_complement(self, value):
         if (value < 0):
-            value = 255 - abs(value)
+            value = (255 - abs(value))
         return value
 
     def move_forward(self, value):
@@ -96,22 +96,22 @@ class Can_Wrapper:
         self.move_from_matrix(np.array([0, 0, 0, 0, 0, -value]))
 
     def move_from_matrix(self, matrix):
-        temp_list = np.dot(matrix, self.motors.transpose())
-        for i in range(len(temp_list)):
-            temp_list[i] = np.clip(temp_list[i], -self.REASONABLE_MOTOR_MAX, self.REASONABLE_MOTOR_MAX)
+        #translate the direction vector matrix to motor values
+        temp_list = np.round(np.dot(matrix, self.motors.transpose()))
         self.input_list = temp_list
 
 
     def stop(self):
         self.input_list = [0,0,0,0,0,0,0,0]
 
-
     #sends commands to motors
     def send_command(self):
         motor_value = 0
         command = ""
-        for motor_value_from_list in self.input_list:
-            motor_value = self.twos_complement(int(motor_value_from_list))
+        for i in range(len(self.input_list)):
+            motor_value = int(self.input_list[i])
+            motor_value = np.clip(motor_value, -self.REASONABLE_MOTOR_MAX, self.REASONABLE_MOTOR_MAX)
+            self.input_list[i] = (motor_value)
             #format command in HEX, getting rid of the first two characters
             command += '{:02X}'.format(motor_value) + " "
 
@@ -121,7 +121,8 @@ class Can_Wrapper:
             self.bus.send(message, timeout = 0.2)
         else:
             pass
-            print(command)
-            print(self.input_list)
+            # print("Motor values: ", self.input_list)
 
+        ret = self.input_list
         self.stop()
+        return ret

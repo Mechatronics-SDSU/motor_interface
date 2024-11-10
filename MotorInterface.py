@@ -1,8 +1,15 @@
-from motors.MotorWrapper            import Can_Wrapper
-from motors.ObjectTracking          import Object_Tracking
+from modules.motors.MotorWrapper            import Can_Wrapper
+from modules.motors.ObjectTracking          import Object_Tracking
 import time
 
 #from MotorWrapper import Can_Wrapper
+"""
+    discord: @kialli
+    github: @kchan5071
+
+    Mission control
+    
+"""
 
 class MotorInterface:
 

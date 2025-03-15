@@ -1,40 +1,31 @@
-
 import math
 import numpy as np
 import time
+import serial
+"""
+usbData[0] = motor0; 
+usbData[1] = motor1; 
+usbData[2] = motor2; 
+usbData[3] = motor3; 
+usbData[4] = motor4; 
+usbData[5] = motor5;
+usbData[6] = motor6; 
+usbData[7] = motor7; 
+usbData[8] = killState; 
+usbData[9] = powerOffState; 
+usbData[10] = red; 
+usbData[11] = green; 
+usbData[12] = blue;
+"""
 
-try:
-    import can
-except:
-    print("CAN library not installed")
-
-'''
-    discord: @kialli
-    github: @kchan5071
-    
-    This class is a wrapper for the CAN bus interface. It is used to send commands to the motors.
-    contains:
-        move methods for motors
-        twos compliment conversion
-
-        test sequence if called as main
-'''
-
-
-class Can_Wrapper:
+class MotorWrapper:
 
     def __init__(self):
-        #set CAN device
-        self.bus = None
-        try:
-            self.bus = can.Bus(interface='socketcan',channel = 'can0', receive_own_messages=True)
-        except:
-            print("CAN device not found")
 
         self.MAX_MOTOR_VAL = 100
     
         #set ~10 for in air, ~30 in water---------------------------------------------------------------
-        self.REASONABLE_MOTOR_MAX = 30
+        self.REASONABLE_MOTOR_MAX = 10
         #-------------------------------------------------------------------------------------------------
 
         self.motors = np.array([
@@ -50,7 +41,32 @@ class Can_Wrapper:
             [ 0,      0,       -1,        0,      -1,      1], # motor 6 (top front right)
             [ 1,      1,        0,        1,       0,      0]  # motor 7 (bottom front right)
         ])
+
         self.input_list = [0, 0, 0, 0, 0, 0, 0, 0]
+
+    # returns a validated version of the value
+    def valid(self, value):
+        if type(value) != int: return None # return none if not an int
+        # count number of active motors
+        count = 0
+        for i in range(8):
+            if self.input_list[i] != 0:
+                count += 1
+        # assign max/min
+        var = 0
+        if count >= 5:
+            var = 4200
+        elif count >= 3:
+            var = 5750
+        elif count >= 0:
+            var = 7850
+        if value > var:
+            print("exceeded maximum value")
+            return var
+        if value < -var:
+            print("less than minimum value")
+            return -var
+        return value
 
     #custom two's compliment for 2 byte values
     #returns int
@@ -76,7 +92,6 @@ class Can_Wrapper:
 
     def move_down(self, value):
         self.move_from_matrix(np.array([0, 0, -value, 0, 0, 0]))
-
     def turn_up(self, value):
         self.move_from_matrix(np.array([0, 0, 0, value, 0, 0]))
 
@@ -100,16 +115,7 @@ class Can_Wrapper:
         temp_list = np.round(np.dot(matrix, self.motors.transpose()))
         self.input_list += temp_list
 
-    def twos_complement(self, value):
-        if value >= 0:
-            return value
-        # Calculate the two's complement
-        value = (1 << 8) + value 
-        # Convert to hex
-        return value
-
-
-    def stop(self):
+    def stop(self): 
         self.input_list = [0,0,0,0,0,0,0,0]
 
     #sends commands to motors
@@ -121,12 +127,13 @@ class Can_Wrapper:
             motor_value = np.clip(motor_value, -self.REASONABLE_MOTOR_MAX, self.REASONABLE_MOTOR_MAX)
             self.input_list[i] = (motor_value)
             #format command in HEX, getting rid of the first two characters
-            command += '{:02X}'.format(self.twos_complement(motor_value)) + " "
+            #command += '{:02X}'.format(self.twos_complement(motor_value)) + " "
 
         #init CAN command message
         if self.bus is not None:
-            message = can.Message(arbitration_id = 16, is_extended_id = False, data = bytearray.fromhex(command))
-            self.bus.send(message, timeout = 0.2)
+            #message = can.Message(arbitration_id = 16, is_extended_id = False, data = bytearray.fromhex(command))
+            #self.bus.send(message, timeout = 0.2)
+            pass
         else:
             pass
             print(command)

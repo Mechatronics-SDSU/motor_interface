@@ -1,7 +1,7 @@
 import serial
 import struct
 import numpy
-"""
+
 usb_port = "COM6"
 baud_rate = 115200
 
@@ -19,6 +19,6 @@ def usb_transmit(num_array):
     # Transmit the packed data over USB
     srl.write(packed_data)
     print(f"Transmitted: {num_array}")
-"""
-def test_tx(num_array): #DELETEME
+
+def print_tx(num_array): #DELETEME
     print(num_array)

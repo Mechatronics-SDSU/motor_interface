@@ -1,6 +1,5 @@
 import numpy as np
-#from USB_Transmit import usb_transmit
-from USB_Transmit import test_tx
+from USB_Transmit import usb_transmit
 """
 usbData[0] = motor0; 
 usbData[1] = motor1; 
@@ -97,8 +96,7 @@ class MotorWrapper:
 
     #sends commands to motors
     def send_command(self):
-        #usb_transmit(np.concatenate((self.motor_vals, self.controls), axis=None)) # concatenate motor and control values
-        test_tx(np.concatenate((self.motor_vals, self.controls), axis=None)) #DELETEME
+        usb_transmit(np.concatenate((self.motor_vals, self.controls), axis=None)) # concatenate motor and control values
 
         motor_values = self.motor_vals # save motor values
         self.stop() # reset motor values to 0s

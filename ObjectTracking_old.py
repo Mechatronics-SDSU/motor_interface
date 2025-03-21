@@ -8,7 +8,7 @@ import numpy as np
 class Object_Tracking:
 
     def follow_object(self, color_offset, gate_offset, yolo_offset):
-        
+        pass
 
 
     def follow_buoy(self):   

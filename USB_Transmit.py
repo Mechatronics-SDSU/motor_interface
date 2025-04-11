@@ -6,34 +6,30 @@ baud_rate = 115200
 usb_port = None
 srl = None
 
-try:
-    usb_port = "COM6"
-    srl = serial.Serial(usb_port, baud_rate)
-except:
+# Try multiple ports
+for port in ["COM3", "/dev/tty.usbmodem205939804E301"]:
     try:
-        usb_port = "/dev/tty.usbmodem205939804E301" # STM32 Virtual ComPort
-        # Initialize the serial connection
-        srl = serial.Serial(usb_port, baud_rate)
-    except:
-        print("unable to connect")
+        srl = serial.Serial(port, baud_rate)
+        usb_port = port
+        print(f"Connected on {usb_port}")
+        break
+    except serial.SerialException as e:
+        print(f"Failed to connect on {port}: {e}")
 
+# Check if connection was successful
+if srl is None:
+    print("❌ Unable to connect to any serial port.")
+else:
+    # Proceed with transmitting if serial port is valid
+    def usb_transmit(num_array):
+        packed_data = b''
+        for num in num_array:
+            packed_data += struct.pack('<i', num)
+        srl.write(packed_data)
+        print(f"Transmitted: {num_array}")
 
-# Initialize the serial connection
-srl = serial.Serial(usb_port, baud_rate)
+    def print_tx(num_array):  # DEBUG FUNCTION
+        print(num_array)
 
-def usb_transmit(num_array):
-    # Create a list to hold the packed data
-    packed_data = b''
-    
-    for num in num_array:
-        # Pack the number as a 32-bit signed integer (little-endian)
-        packed_data += struct.pack('<i', num)
-
-    # Transmit the packed data over USB
-    srl.write(packed_data)
-    print(f"Transmitted: {num_array}")
-
-def print_tx(num_array): #DELETEME
-    print(num_array)
-
-#usb_transmit([100, 0, 0, 0, 0, 0, 0, 0])
+    # Optional test call
+    # usb_transmit([100, 0, 0, 0, 0, 0, 0, 0])

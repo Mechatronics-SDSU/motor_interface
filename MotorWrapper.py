@@ -27,15 +27,15 @@ class MotorWrapper:
         self.motors = np.array([
             #LjoyX   LjoyY   RjoyX   RjoyY    Rtrig   Ltrig   LPad       RDpad
             
-           # x        y        z        yaw     pitch    roll
-            [ 0,      0,       -1,        0,      -1,     -1], # motor 0 (top front left)
-            [ 1,      1,        0,       -1,       0,      0], # motor 1 (bottom front left)
-            [ 0,      0,       -1,        0,       1,     -1], # motor 2 (top back left)
-            [ 1,     -1,        0,       -1,       0,      0], # motor 3 (bottom back left)
-            [ 0,      0,       -1,        0,       1,      1], # motor 4 (top back right)
-            [ 1,     -1,        0,        1,       0,      0], # motor 5 (bottom back right)
-            [ 0,      0,       -1,        0,      -1,      1], # motor 6 (top front right)
-            [ 1,      1,        0,        1,       0,      0]  # motor 7 (bottom front right)
+            # x        y        z        yaw     pitch    roll
+            [ 0,      0,       1,        1,       0,     -1], # motor 0 FL0 (vertical)
+            [ 1,     -1,       0,        0,      -1,      0], # motor 1 FL1
+            [ 0,      0,       1,       -1,       0,     -1], # motor 2 BL2 (vertical)
+            [ -1,    -1,       0,        0,       1,      0], # motor 3 BL3
+            [ 0,      0,       1,       -1,       0,      1], # motor 4 BR4 (veritcal)
+            [ -1,     1,       0,        0,      -1,      0], # motor 5 BR5
+            [ 0,      0,       1,        1,       0,      1], # motor 6 FR6 (vertical)
+            [ 1,      1,       0,        0,       1,      0]  # motor 7 FR7
         ])
         self.controls   = [0, 0, 0, 255, 0] # control values (kill, power off, lights R,G,B) FIXME assign to shared mem vals
         self.motor_vals = [0, 0, 0, 0, 0, 0, 0, 0] # motor values
